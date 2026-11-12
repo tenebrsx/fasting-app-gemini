@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Fast</title>
+  <meta name="theme-color" content="#0D1424" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#F2F4F9" media="(prefers-color-scheme: light)">
+  <meta name="description" content="Fasting timer and macro log">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Fast">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Sora:wght@300;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div id="boot" class="boot"><div class="boot-ring"></div></div>
+
+  <!-- Sign in -->
+  <section id="signin" class="signin" hidden>
+    <svg class="signin-ring" viewBox="0 0 200 200" aria-hidden="true">
+      <defs>
+        <linearGradient id="sg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#FFB547"/><stop offset=".5" stop-color="#FF7A59"/><stop offset="1" stop-color="#C770F0"/>
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-width="14"/>
+      <circle cx="100" cy="100" r="84" fill="none" stroke="url(#sg)" stroke-width="14" stroke-linecap="round" stroke-dasharray="390 528" transform="rotate(-90 100 100)"/>
+    </svg>
+    <h1>Fast</h1>
+    <p>Your fasts and macros, saved to your account and synced across devices.</p>
+    <button id="btn-google" class="btn btn-primary btn-wide">
+      <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="m6.3 14.7 6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
+      Continue with Google
+    </button>
+    <p id="signin-error" class="error" role="alert"></p>
+  </section>
+
+  <!-- App -->
+  <div id="app" class="app" hidden>
+    <main>
+      <!-- TIMER -->
+      <section id="view-timer" class="view" data-view="timer">
+        <header class="topbar">
+          <h2 id="timer-title">Fasting</h2>
+          <span id="sync-dot" class="sync" title="Synced"></span>
+        </header>
+
+        <div class="ring-wrap">
+          <svg id="ring" class="ring" viewBox="0 0 320 320" role="img" aria-labelledby="ring-label">
+            <title id="ring-label">Fasting progress</title>
+            <circle class="ring-track" cx="160" cy="160" r="138"/>
+            <g id="ring-arcs"></g>
+            <g id="ring-ticks"></g>
+            <circle id="ring-head" class="ring-head" cx="160" cy="22" r="9"/>
+          </svg>
+          <div class="ring-center">
+            <div id="ring-caption" class="ring-caption">Elapsed</div>
+            <div id="ring-time" class="ring-time">00:00:00</div>
+            <div id="ring-sub" class="ring-sub"></div>
+          </div>
+        </div>
+
+        <div id="zone-now" class="zone-now"></div>
+
+        <div class="times">
+          <button id="btn-edit-start" class="time-cell" type="button">
+            <span class="time-label">Started</span>
+            <span id="t-start" class="time-val">—</span>
+            <span class="time-hint">Edit</span>
+          </button>
+          <div class="time-cell">
+            <span class="time-label" id="t-goal-label">Goal</span>
+            <span id="t-goal" class="time-val">—</span>
+            <span class="time-hint" id="t-goal-hint"></span>
+          </div>
+        </div>
+
+        <div class="presets" role="radiogroup" aria-label="Fast length" id="presets"></div>
+
+        <button id="btn-fast" class="btn btn-primary btn-xl" type="button">Start fast</button>
+
+        <ol id="zone-list" class="zone-list"></ol>
+        <p class="fine">Zones are rough approximations that vary from person to person. They're a guide, not medical advice.</p>
+      </section>
+
+      <!-- MACROS -->
+      <section id="view-macros" class="view" data-view="macros" hidden>
+        <header class="topbar">
+          <button class="icon-btn" id="day-prev" aria-label="Previous day"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+          <h2 id="day-title">Today</h2>
+          <button class="icon-btn" id="day-next" aria-label="Next day"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        </header>
+        <div id="macro-bars" class="macro-bars"></div>
+        <div class="list-head">
+          <h3>Meals</h3>
+          <button id="btn-add-meal" class="btn btn-soft" type="button">Add meal</button>
+        </div>
+        <ul id="meal-list" class="meal-list"></ul>
+      </section>
+
+      <!-- HISTORY -->
+      <section id="view-history" class="view" data-view="history" hidden>
+        <header class="topbar"><h2>History</h2></header>
+        <div id="stats" class="stats"></div>
+        <div class="chart-card">
+          <div class="chart-head">
+            <h3>Last 14 days</h3>
+            <div class="seg" role="tablist" id="chart-seg">
+              <button data-k="protein_g" class="on">Protein</button>
+              <button data-k="calories">Calories</button>
+            </div>
+          </div>
+          <div id="chart" class="chart"></div>
+        </div>
+        <div class="list-head"><h3>Fasts</h3></div>
+        <ul id="fast-list" class="fast-list"></ul>
+      </section>
+
+      <!-- SETTINGS -->
+      <section id="view-settings" class="view" data-view="settings" hidden>
+        <header class="topbar"><h2>Settings</h2></header>
+        <form id="settings-form" class="form card">
+          <h3>Daily targets</h3>
+          <p class="fine">Leave a field empty to track it without a target.</p>
+          <label>Calories <input name="calories" type="number" inputmode="numeric" min="0" step="1" placeholder="No target"></label>
+          <label>Protein, at least (g) <input name="protein_g" type="number" inputmode="numeric" min="0" step="1" placeholder="120"></label>
+          <label>Carbs (g) <input name="carbs_g" type="number" inputmode="numeric" min="0" step="1" placeholder="No target"></label>
+          <label>Fat (g) <input name="fat_g" type="number" inputmode="numeric" min="0" step="1" placeholder="No target"></label>
+          <h3>Fasting</h3>
+          <label>Default fast length (hours) <input name="defaultFastHours" type="number" inputmode="numeric" min="1" max="240" step="1"></label>
+          <button class="btn btn-primary" type="submit">Save settings</button>
+          <p id="settings-msg" class="ok" role="status"></p>
+        </form>
+        <div class="card account">
+          <div>
+            <div class="fine">Signed in as</div>
+            <div id="acct-email"></div>
+          </div>
+          <button id="btn-signout" class="btn btn-soft" type="button">Sign out</button>
+        </div>
+        <p class="fine center">Add to Home Screen from your browser's share menu to use it like an app.</p>
+      </section>
+    </main>
+
+    <nav class="tabbar" aria-label="Sections">
+      <button data-tab="timer" class="on"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M9.5 2.5h5"/></svg><span>Timer</span></button>
+      <button data-tab="macros"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Macros</span></button>
+      <button data-tab="history"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg><span>History</span></button>
+      <button data-tab="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Settings</span></button>
+    </nav>
+  </div>
+
+  <!-- Sheets -->
+  <dialog id="sheet" class="sheet">
+    <form method="dialog" id="sheet-form" class="form">
+      <div class="sheet-grip" aria-hidden="true"></div>
+      <h3 id="sheet-title"></h3>
+      <div id="sheet-body"></div>
+      <p id="sheet-error" class="error" role="alert"></p>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-danger" id="sheet-delete" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn-soft" id="sheet-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="sheet-ok">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

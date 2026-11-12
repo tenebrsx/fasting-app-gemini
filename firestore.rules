@@ -1,0 +1,51 @@
+rules_version = '2';
+
+// Each signed-in user can only read/write documents under users/{their uid}.
+// The bot writes with owner (admin) credentials, which bypass these rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    function optNum(d, k) {
+      return !(k in d) || d[k] == null || d[k] is number;
+    }
+
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /fasts/{fastId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.start is timestamp
+          && (request.resource.data.end == null || request.resource.data.end is timestamp)
+          && request.resource.data.targetHours is number
+          && request.resource.data.targetHours > 0
+          && request.resource.data.targetHours <= 240;
+      }
+
+      match /meals/{mealId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && request.resource.data.time is timestamp
+          && request.resource.data.description is string
+          && request.resource.data.description.size() <= 500
+          && optNum(request.resource.data, 'calories')
+          && optNum(request.resource.data, 'protein_g')
+          && optNum(request.resource.data, 'carbs_g')
+          && optNum(request.resource.data, 'fat_g')
+          && (!('photo' in request.resource.data) || request.resource.data.photo == null
+              || (request.resource.data.photo is string && request.resource.data.photo.size() < 400000));
+      }
+
+      match /settings/{docId} {
+        allow read, write: if isOwner(uid);
+      }
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

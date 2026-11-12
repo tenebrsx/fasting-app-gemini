@@ -1,0 +1,13 @@
+{
+  "settings": {
+    "dailyTargets": {
+      "calories": null,
+      "protein_g": 120,
+      "carbs_g": null,
+      "fat_g": null
+    },
+    "defaultFastHours": 24
+  },
+  "fasts": [],
+  "meals": []
+}
