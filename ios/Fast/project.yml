@@ -29,6 +29,18 @@ targets:
         SWIFT_OBJC_BRIDGING_HEADER: Fast/Utilities/Fast-Bridging-Header.h
     info:
       path: Fast/Info.plist
+      properties:
+        CFBundleDisplayName: Fast
+        LSRequiresIPhoneOS: true
+        NSPhotoLibraryUsageDescription: Attach meal photos to your macro log.
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UIBackgroundModes:
+          - remote-notification
+        UILaunchScreen:
+          UIColorName: LaunchBackground
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
     entitlements:
       path: Fast/Fast.entitlements
     scheme:

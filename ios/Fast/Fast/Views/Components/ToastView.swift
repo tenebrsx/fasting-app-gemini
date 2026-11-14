@@ -36,7 +36,7 @@ struct ToastOverlayModifier: ViewModifier {
                     .background(Theme.surface2, in: Capsule())
                     .overlay(Capsule().stroke(Theme.line, lineWidth: 1))
                     .shadow(color: .black.opacity(0.22), radius: 12, y: 6)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 74)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

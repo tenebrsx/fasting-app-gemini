@@ -101,11 +101,15 @@ struct HistoryView: View {
                     Text(item.0)
                         .font(.headline.monospacedDigit())
                         .foregroundStyle(Theme.ink)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Text(item.1)
                         .font(.caption)
                         .foregroundStyle(Theme.mist)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .appCard(padding: 12, radius: Theme.radiusSM)
             }
         }
@@ -126,10 +130,12 @@ struct HistoryView: View {
         }
 
         return VStack(alignment: .leading, spacing: 12) {
-            HStack {
+            HStack(spacing: 8) {
                 Text("Last 14 days")
                     .font(.headline)
                     .foregroundStyle(Theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
                 Spacer()
                 Picker("Metric", selection: $metric) {
                     ForEach(HistoryChartMetric.allCases) { item in
@@ -137,7 +143,7 @@ struct HistoryView: View {
                     }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 170)
+                .frame(width: 155)
             }
 
             Chart {
