@@ -55,6 +55,7 @@ struct MealSheetView: View {
             Form {
                 Section("Meal") {
                     TextField("e.g. 3 eggs, avocado, toast", text: $descriptionText)
+                        .accessibilityIdentifier("meal-description")
                     DatePicker("Time", selection: $mealTime, displayedComponents: [.date, .hourAndMinute])
                 }
 
@@ -66,6 +67,7 @@ struct MealSheetView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 90)
+                            .accessibilityIdentifier("meal-protein")
                     }
                     HStack {
                         Text("Calories")
@@ -74,6 +76,7 @@ struct MealSheetView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 90)
+                            .accessibilityIdentifier("meal-calories")
                     }
                     HStack {
                         Text("Carbs (g)")
@@ -82,6 +85,7 @@ struct MealSheetView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 90)
+                            .accessibilityIdentifier("meal-carbs")
                     }
                     HStack {
                         Text("Fat (g)")
@@ -90,6 +94,7 @@ struct MealSheetView: View {
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                             .frame(width: 90)
+                            .accessibilityIdentifier("meal-fat")
                     }
                 }
 

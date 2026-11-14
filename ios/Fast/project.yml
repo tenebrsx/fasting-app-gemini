@@ -34,6 +34,7 @@ targets:
     scheme:
       testTargets:
         - FastTests
+        - FastUITests
 
   FastTests:
     type: bundle.unit-test
@@ -46,4 +47,18 @@ targets:
     settings:
       base:
         GENERATE_INFOPLIST_FILE: true
+        SWIFT_STRICT_CONCURRENCY: complete
+
+  FastUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: FastUITests
+    dependencies:
+      - target: Fast
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        TEST_TARGET_NAME: Fast
         SWIFT_STRICT_CONCURRENCY: complete

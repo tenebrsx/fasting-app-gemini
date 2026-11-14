@@ -34,6 +34,7 @@ final class DataStore {
 
     static var isRunningTests: Bool {
         ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+            || CommandLine.arguments.contains("-inMemory")
     }
 
     init(inMemory: Bool = DataStore.isRunningTests) {
@@ -55,26 +56,42 @@ final class DataStore {
             return
         }
 
-        let cloudConfig = ModelConfiguration(
-            schema: schema,
-            isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
-        )
-
+        var canUseCloudKit = false
         do {
-            self.container = try ModelContainer(for: schema, configurations: [cloudConfig])
+            try ObjCExceptionCatcher.perform {
+                _ = CKContainer.default()
+                canUseCloudKit = true
+            }
         } catch {
-            // Fallback to local-only persistence if CloudKit entitlements/account are unavailable
-            let localConfig = ModelConfiguration(
+            canUseCloudKit = false
+        }
+
+        if canUseCloudKit {
+            let cloudConfig = ModelConfiguration(
                 schema: schema,
                 isStoredInMemoryOnly: false,
-                cloudKitDatabase: .none
+                cloudKitDatabase: .automatic
             )
-            do {
-                self.container = try ModelContainer(for: schema, configurations: [localConfig])
-            } catch {
-                fatalError("Failed to create ModelContainer: \(error)")
+            var createdCloudContainer: ModelContainer?
+            try? ObjCExceptionCatcher.perform {
+                createdCloudContainer = try? ModelContainer(for: schema, configurations: [cloudConfig])
             }
+            if let createdCloudContainer {
+                self.container = createdCloudContainer
+                return
+            }
+        }
+
+        // Local-only fallback when unsigned or CloudKit entitlements are unavailable
+        let localConfig = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .none
+        )
+        do {
+            self.container = try ModelContainer(for: schema, configurations: [localConfig])
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
         }
     }
 
