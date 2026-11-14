@@ -200,22 +200,29 @@ struct TimerView: View {
     }
 
     private var actionButton: some View {
-        Button {
-            if activeFast == nil {
+        let isEnding = activeFast != nil
+        return Button {
+            if !isEnding {
                 startFast()
             } else {
                 showEndFast = true
             }
         } label: {
-            Text(activeFast == nil ? "Start \(Formatters.hoursLabel(currentTargetHours)) fast" : "End fast")
+            Text(isEnding ? "End fast" : "Start \(Formatters.hoursLabel(currentTargetHours)) fast")
         }
         .buttonStyle(
             PrimaryPillButtonStyle(
-                background: activeFast == nil ? Theme.ember : Theme.coral,
-                foreground: activeFast == nil ? Theme.onPrimary : .white,
+                background: isEnding ? Theme.surface2 : Theme.ember,
+                foreground: isEnding ? Theme.ink : Theme.onPrimary,
                 isLarge: true
             )
         )
+        .overlay {
+            if isEnding {
+                Capsule()
+                    .stroke(Theme.coral, lineWidth: 1.5)
+            }
+        }
     }
 
     private func zonesList(elapsedHours: Double) -> some View {

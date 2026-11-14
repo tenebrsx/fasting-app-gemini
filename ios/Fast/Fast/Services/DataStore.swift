@@ -29,9 +29,15 @@ enum CloudSyncState: Equatable {
 @Observable
 final class DataStore {
     let container: ModelContainer
+    let isInMemory: Bool
     var syncState: CloudSyncState = .checking
 
-    init(inMemory: Bool = false) {
+    static var isRunningTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
+    init(inMemory: Bool = DataStore.isRunningTests) {
+        self.isInMemory = inMemory
         let schema = Schema([
             FastEntry.self,
             MealEntry.self,
@@ -45,6 +51,7 @@ final class DataStore {
             } catch {
                 fatalError("Failed to create in-memory ModelContainer: \(error)")
             }
+            self.syncState = .unavailable("Test store")
             return
         }
 
@@ -93,8 +100,28 @@ final class DataStore {
     }
 
     func refreshCloudStatus() async {
+        guard !isInMemory, !Self.isRunningTests else {
+            syncState = .unavailable("Test store")
+            return
+        }
+
+        var container: CKContainer?
         do {
-            let status = try await CKContainer.default().accountStatus()
+            try ObjCExceptionCatcher.perform {
+                container = CKContainer.default()
+            }
+        } catch {
+            syncState = .unavailable("iCloud entitlement missing")
+            return
+        }
+
+        guard let container else {
+            syncState = .unavailable("Could not initialize container")
+            return
+        }
+
+        do {
+            let status = try await container.accountStatus()
             switch status {
             case .available:
                 syncState = .available

@@ -1,3 +1,4 @@
+import SwiftData
 import XCTest
 @testable import Fast
 
@@ -8,11 +9,14 @@ final class FastTests: XCTestCase {
         XCTAssertNoThrow(try FastValidator.validateTargetHours(240))
         XCTAssertThrowsError(try FastValidator.validateTargetHours(0))
         XCTAssertThrowsError(try FastValidator.validateTargetHours(241))
+        XCTAssertThrowsError(try FastValidator.validateTargetHours(.nan))
     }
 
-    func testSingleActiveFastConstraint() throws {
+    func testFastValidationConstraints() throws {
         let now = Date()
         let active = FastEntry(start: now.addingTimeInterval(-3600), end: nil, targetHours: 24)
+
+        // Cannot start a second active fast
         XCTAssertThrowsError(
             try FastValidator.validateFast(
                 start: now,
@@ -23,12 +27,37 @@ final class FastTests: XCTestCase {
                 now: now
             )
         )
+
         // Editing the same active fast is allowed
         XCTAssertNoThrow(
             try FastValidator.validateFast(
                 start: now.addingTimeInterval(-7200),
                 end: nil,
                 targetHours: 36,
+                editingID: active.id,
+                existingFasts: [active],
+                now: now
+            )
+        )
+
+        // End must be after start
+        XCTAssertThrowsError(
+            try FastValidator.validateFast(
+                start: now,
+                end: now.addingTimeInterval(-60),
+                targetHours: 24,
+                editingID: active.id,
+                existingFasts: [active],
+                now: now
+            )
+        )
+
+        // End cannot be in the future (> 60s grace)
+        XCTAssertThrowsError(
+            try FastValidator.validateFast(
+                start: now.addingTimeInterval(-3600),
+                end: now.addingTimeInterval(300),
+                targetHours: 24,
                 editingID: active.id,
                 existingFasts: [active],
                 now: now
@@ -64,6 +93,15 @@ final class FastTests: XCTestCase {
                 fatG: nil
             )
         )
+        XCTAssertThrowsError(
+            try FastValidator.validateMeal(
+                description: "Eggs",
+                calories: 200,
+                proteinG: -1,
+                carbsG: nil,
+                fatG: nil
+            )
+        )
         let clean = try FastValidator.validateMeal(
             description: "  3 eggs  ",
             calories: 210,
@@ -86,5 +124,40 @@ final class FastTests: XCTestCase {
         XCTAssertEqual(Formatters.duration(5400), "1h 30m")
         XCTAssertEqual(Formatters.hoursLabel(24), "24h")
         XCTAssertEqual(Formatters.hoursLabel(24.5), "24.5h")
+    }
+
+    @MainActor
+    func testSwiftDataPersistenceAndSettingsDeduplication() throws {
+        let store = DataStore(inMemory: true)
+        let context = store.container.mainContext
+
+        // Insert duplicate settings and verify ensureSettings keeps the newest and deduplicates
+        let older = UserSettings(proteinTarget: 100, defaultFastHours: 16, updatedAt: Date(timeIntervalSince1970: 100))
+        let newer = UserSettings(proteinTarget: 140, defaultFastHours: 36, updatedAt: Date(timeIntervalSince1970: 200))
+        context.insert(older)
+        context.insert(newer)
+        try context.save()
+
+        let resolved = store.ensureSettings(in: context)
+        XCTAssertEqual(resolved.proteinTarget, 140)
+        XCTAssertEqual(resolved.defaultFastHours, 36)
+        let remainingSettings = try context.fetch(FetchDescriptor<UserSettings>())
+        XCTAssertEqual(remainingSettings.count, 1)
+
+        // FastEntry goal check
+        let start = Date(timeIntervalSince1970: 1000)
+        let fast = FastEntry(start: start, end: start.addingTimeInterval(25 * 3600), targetHours: 24)
+        context.insert(fast)
+        XCTAssertTrue(fast.didHitGoal)
+        XCTAssertFalse(fast.isActive)
+
+        // MealEntry macro helpers
+        let meal = MealEntry(mealDescription: "Steak & eggs", calories: 650, proteinG: 52, carbsG: 2, fatG: 46)
+        context.insert(meal)
+        try context.save()
+        XCTAssertEqual(meal.value(for: .protein), 52)
+        XCTAssertEqual(meal.value(for: .calories), 650)
+        XCTAssertEqual(meal.value(for: .carbs), 2)
+        XCTAssertEqual(meal.value(for: .fat), 46)
     }
 }

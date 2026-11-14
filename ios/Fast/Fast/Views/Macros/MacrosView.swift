@@ -206,9 +206,8 @@ private struct MealRowView: View {
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
-                Text(metaLine)
+                metaText
                     .font(.caption)
-                    .foregroundStyle(Theme.mist)
                     .lineLimit(2)
             }
 
@@ -234,13 +233,20 @@ private struct MealRowView: View {
         }
     }
 
-    private var metaLine: String {
+    private var metaText: Text {
         let time = Formatters.timeOnly(meal.time)
         let protein = "\(Int((meal.proteinG ?? 0).rounded()))g protein"
         let cal = meal.calories.map { "\(Int($0.rounded())) kcal" } ?? "— kcal"
         let carbs = meal.carbsG.map { "C \(Int($0.rounded()))" } ?? "C —"
         let fat = meal.fatG.map { "F \(Int($0.rounded()))" } ?? "F —"
         let photoTag = meal.source == "photo" ? " · from photo" : ""
-        return "\(time) · \(protein) · \(cal) · \(carbs) · \(fat)\(photoTag)"
+
+        return Text("\(time) · ")
+            .foregroundStyle(Theme.mist)
+        + Text(protein)
+            .fontWeight(.semibold)
+            .foregroundStyle(Theme.ink)
+        + Text(" · \(cal) · \(carbs) · \(fat)\(photoTag)")
+            .foregroundStyle(Theme.mist)
     }
 }
