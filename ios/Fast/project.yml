@@ -1,0 +1,48 @@
+name: Fast
+options:
+  bundleIdPrefix: com.tenebrsx
+  deploymentTarget:
+    iOS: "18.0"
+  xcodeVersion: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+    GENERATE_INFOPLIST_FILE: false
+targets:
+  Fast:
+    type: application
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: Fast
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.tenebrsx.fast
+        INFOPLIST_FILE: Fast/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Fast/Fast.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        SWIFT_STRICT_CONCURRENCY: complete
+    info:
+      path: Fast/Info.plist
+    entitlements:
+      path: Fast/Fast.entitlements
+    scheme:
+      testTargets:
+        - FastTests
+
+  FastTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: FastTests
+    dependencies:
+      - target: Fast
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        SWIFT_STRICT_CONCURRENCY: complete

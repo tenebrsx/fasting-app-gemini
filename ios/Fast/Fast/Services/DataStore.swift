@@ -1,0 +1,116 @@
+import CloudKit
+import Foundation
+import Observation
+import SwiftData
+
+enum CloudSyncState: Equatable {
+    case checking
+    case available
+    case noAccount
+    case restricted
+    case unavailable(String)
+
+    var label: String {
+        switch self {
+        case .checking: "Checking iCloud..."
+        case .available: "iCloud Sync Active"
+        case .noAccount: "Not signed in to iCloud (local only)"
+        case .restricted: "iCloud Restricted (local only)"
+        case .unavailable(let reason): "iCloud Unavailable: \(reason)"
+        }
+    }
+
+    var isSynced: Bool {
+        self == .available
+    }
+}
+
+@MainActor
+@Observable
+final class DataStore {
+    let container: ModelContainer
+    var syncState: CloudSyncState = .checking
+
+    init(inMemory: Bool = false) {
+        let schema = Schema([
+            FastEntry.self,
+            MealEntry.self,
+            UserSettings.self,
+        ])
+
+        if inMemory {
+            let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true, cloudKitDatabase: .none)
+            do {
+                self.container = try ModelContainer(for: schema, configurations: [config])
+            } catch {
+                fatalError("Failed to create in-memory ModelContainer: \(error)")
+            }
+            return
+        }
+
+        let cloudConfig = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
+
+        do {
+            self.container = try ModelContainer(for: schema, configurations: [cloudConfig])
+        } catch {
+            // Fallback to local-only persistence if CloudKit entitlements/account are unavailable
+            let localConfig = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false,
+                cloudKitDatabase: .none
+            )
+            do {
+                self.container = try ModelContainer(for: schema, configurations: [localConfig])
+            } catch {
+                fatalError("Failed to create ModelContainer: \(error)")
+            }
+        }
+    }
+
+    func ensureSettings(in context: ModelContext) -> UserSettings {
+        let descriptor = FetchDescriptor<UserSettings>(
+            sortBy: [SortDescriptor(\.updatedAt, order: .reverse)]
+        )
+        if let existing = try? context.fetch(descriptor), let first = existing.first {
+            // Deduplicate if CloudKit synced multiple settings records from separate devices
+            if existing.count > 1 {
+                for duplicate in existing.dropFirst() {
+                    context.delete(duplicate)
+                }
+                try? context.save()
+            }
+            return first
+        }
+
+        let created = UserSettings()
+        context.insert(created)
+        try? context.save()
+        return created
+    }
+
+    func refreshCloudStatus() async {
+        do {
+            let status = try await CKContainer.default().accountStatus()
+            switch status {
+            case .available:
+                syncState = .available
+            case .noAccount:
+                syncState = .noAccount
+            case .restricted:
+                syncState = .restricted
+            case .couldNotDetermine:
+                syncState = .unavailable("Could not determine")
+            case .temporarilyUnavailable:
+                syncState = .unavailable("Temporarily unavailable")
+            @unknown default:
+                syncState = .unavailable("Unknown status")
+            }
+        } catch {
+            syncState = .unavailable(error.localizedDescription)
+        }
+    }
+}
